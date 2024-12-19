@@ -2,7 +2,7 @@ import flet as ft
 import pandas as pd
 from db import criar_militar, ler_militares
 from utils import POST_GRAD
-from tabelas import table_comum, data_list, table_edit, data_list_edit
+from tabelas import table_comum, data_list, table_edit, data_list_edit, carregar_dados_table_edit, campo_field, drop_field
 
 
 def main(page: ft.Page):
@@ -33,7 +33,7 @@ def main(page: ft.Page):
             for index, row in df.iterrows():
                 data = row[required_columns].tolist()
                 data_list.append(data)
-                cells = [ft.DataCell(ft.Text(str(value), color=ft.colors.BLUE_900))
+                cells = [ft.DataCell(ft.Text(str(value), color=ft.Colors.BLUE_900))
                          for value in data]
                 delete_button = ft.ElevatedButton(
                     text="X",
@@ -58,56 +58,6 @@ def main(page: ft.Page):
             print(item)
             page.add(ft.Text(str(item)))
 
-    def campo_field(nome_main="preencha", max_l=0, apenas_numeros=False):
-        def validar_numeros(e):
-            if not e.control.value.isdigit():
-                e.control.value = ''.join(filter(str.isdigit, e.control.value))
-            e.page.update()
-
-        if apenas_numeros:
-            return ft.TextField(
-                label=nome_main,
-                width=300,
-                text_align=ft.TextAlign.CENTER,
-                label_style={"color": "#081d33", "font_size": 13, "font_weight": "bold"},
-                border_radius=6,
-                color="#081d33",
-                border_color="#081d33",
-                text_size=13,
-                max_length=max_l if max_l > 0 else None,
-                content_padding=10,
-                on_change=validar_numeros
-            )
-        else:
-            return ft.TextField(
-                label=nome_main,
-                width=300,
-                text_align=ft.TextAlign.CENTER,
-                label_style={"color": "#081d33", "font_size": 13, "font_weight": "bold"},
-                border_radius=6,
-                color="#081d33",
-                border_color="#081d33",
-                text_size=13,
-                max_length=max_l if max_l > 0 else None,
-                content_padding=10
-            )
-
-    def drop_field(options: list[str], label: str = ""):
-        return ft.Dropdown(
-                alignment=ft.alignment.center,
-                padding=10,
-                label=label,
-                text_style={"color": "#081d33", "font_size": 13, "font_weight": "bold"},
-                label_style={"color": "#1664B8", "font_size": 13, "font_weight": "bold"},
-                options=[ft.dropdown.Option(
-                item, alignment=ft.alignment.center) for item in options],
-                width=300,
-                border_radius=6,
-                color="#081d33",
-                text_size=13,
-                content_padding=0,
-                bgcolor="#ebebeb",
-            )
 
     def change_color(e):
         if e.control.text == "CADASTRO":
@@ -203,8 +153,7 @@ def main(page: ft.Page):
                     if militares_existentes:
                         popup_existe = ft.AlertDialog(
                             title=ft.Text("Registro já existe"),
-                            content=ft.Text(f"O registro com o número {
-                                            numero_f.value} já está cadastrado."),
+                            content=ft.Text(f"O registro com o número {numero_f.value} já está cadastrado."),
                             actions=[ft.TextButton(
                                 "OK", on_click=lambda e: fechar_popup(popup_existe))],
                             modal=True
@@ -227,13 +176,13 @@ def main(page: ft.Page):
                         )
                         popup_sucesso = ft.AlertDialog(
                             title=ft.Text("Cadastro realizado"),
-                            content=ft.Text(f"O registro com o número {
-                                            numero_f.value} foi cadastrado com sucesso."),
+                            content=ft.Text(f"O registro com o número {numero_f.value} foi cadastrado com sucesso."),
                             actions=[ft.TextButton(
                                 "OK", on_click=lambda e: fechar_popup(popup_sucesso))],
                             modal=True
                         )
                         page.overlay.append(popup_sucesso)
+                        limpar_campos()
                         popup_sucesso.open = True
                         page.update()
 
@@ -243,9 +192,9 @@ def main(page: ft.Page):
 
             body_container.content = ft.Container(
                 alignment=ft.alignment.center,
-                bgcolor=ft.colors.WHITE10,
+                bgcolor=ft.Colors.WHITE10,
                 content=ft.Container(
-                    bgcolor=ft.colors.WHITE,
+                    bgcolor=ft.Colors.WHITE,
                     alignment=ft.alignment.center,
                     padding=ft.padding.all(16),
                     border_radius=6,
@@ -254,7 +203,7 @@ def main(page: ft.Page):
                         horizontal_alignment=ft.CrossAxisAlignment.CENTER,
                         expand=True,
                         controls=[
-                            ft.Text("Cadastro de Militares", color=ft.colors.BLUE_GREY,
+                            ft.Text("Cadastro de Militares", color=ft.Colors.BLUE_GREY,
                                         size=30, weight="bold", text_align=ft.TextAlign.CENTER),
                             ft.Divider(height=12, color="transparent"),
                             ft.Row(
@@ -292,6 +241,8 @@ def main(page: ft.Page):
             )
 
         elif e.control.text == "GESTÃO":
+            carregar_dados_table_edit(page)  # Carrega os registros do banco na tabela
+
             body_container.content = ft.Container(
                 content=ft.Column(
                     controls=[
@@ -299,33 +250,30 @@ def main(page: ft.Page):
                             alignment=ft.MainAxisAlignment.CENTER,
                             controls=[
                                 ft.Text("Edição e Exclusão de militar",
-                                        color=ft.colors.BLUE_GREY,
+                                        color=ft.Colors.BLUE_GREY,
                                         size=30, weight="bold", text_align=ft.TextAlign.CENTER)
-
                             ]
                         ),
-                        # Adiciona a tabela na Row com rolagem
                         ft.Container(
                             content=ft.Column(
                                 controls=[
-                                    ft.Row(
-                                        [table_edit], scroll=ft.ScrollMode.ALWAYS)
+                                    ft.Row([table_edit], scroll=ft.ScrollMode.ALWAYS)
                                 ],
                                 scroll=ft.ScrollMode.ALWAYS
                             ),
-                            width=page.width - 40,  # Ajuste para considerar o padding
-                            height=300,  # Altura fixa da tabela
-                            bgcolor=ft.colors.GREY_50
-                        ),
-                        ft.Divider(),
-                        ft.Row(controls=[])
+                            width=page.width - 40,
+                            height=300,
+                            bgcolor=ft.Colors.GREY_50
+                        )
                     ],
                     width=page.width,
-                    height=page.height - 200  # Ajuste para considerar o espaço do cabeçalho e do menu
+                    height=page.height - 200
                 ),
                 padding=ft.padding.all(20),
-                bgcolor=ft.colors.WHITE
+                bgcolor=ft.Colors.WHITE
             )
+            page.update()
+
         elif e.control.text == "EMPENHO":
             painel_process = ft.Container(
                 padding=ft.padding.all(10),
@@ -349,7 +297,7 @@ def main(page: ft.Page):
                         ft.Row(
                             controls=[
                                 ft.Text("Selecione o modo de carregamento desejado:",
-                                        color=ft.colors.BLUE_700),
+                                        color=ft.Colors.BLUE_700),
                                 ft.ElevatedButton(
                                     text="Carregar Planilha",
                                     on_click=lambda _: file_picker.pick_files()
@@ -372,7 +320,7 @@ def main(page: ft.Page):
                             ),
                             width=page.width - 40,  # Ajuste para considerar o padding
                             height=300,  # Altura fixa da tabela
-                            bgcolor=ft.colors.GREY_50
+                            bgcolor=ft.Colors.GREY_50
                         ),
                         ft.Divider(),
                         ft.Row(controls=[painel_process])
@@ -381,17 +329,17 @@ def main(page: ft.Page):
                     height=page.height - 200  # Ajuste para considerar o espaço do cabeçalho e do menu
                 ),
                 padding=ft.padding.all(20),
-                bgcolor=ft.colors.WHITE
+                bgcolor=ft.Colors.WHITE
             )
         elif e.control.text == "LIQUIDAÇÃO":
             body_container.content = ft.Container(
-                bgcolor=ft.colors.RED,
+                bgcolor=ft.Colors.RED,
                 width=page.width,
                 height=page.height - 200
             )
         elif e.control.text == "PAGAMENTO":
             body_container.content = ft.Container(
-                bgcolor=ft.colors.GREEN,
+                bgcolor=ft.Colors.GREEN,
                 width=page.width,
                 height=page.height - 200
             )
@@ -418,7 +366,7 @@ def main(page: ft.Page):
         controls=[
             ft.Image(src="logo.png", width=50, height=50),
             ft.Text("FINANÇAS CBMMG BOT", style=ft.TextStyle(
-                size=25, color=ft.colors.WHITE), text_align=ft.TextAlign.CENTER),
+                size=25, color=ft.Colors.WHITE), text_align=ft.TextAlign.CENTER),
             ft.Image(src="logo.png", width=50, height=50),
         ],
         alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
@@ -454,7 +402,7 @@ def main(page: ft.Page):
     username = ft.TextField(label="Usuário")
     password = ft.TextField(label="Senha", password=True,
                             can_reveal_password=True)
-    error_message = ft.Text(value="", color=ft.colors.RED)
+    error_message = ft.Text(value="", color=ft.Colors.RED)
     login_dialog = ft.AlertDialog(
         title=ft.Text("Login"),
         content=ft.Column(
