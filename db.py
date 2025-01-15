@@ -53,11 +53,12 @@ def ler_militar(militar_id):
 def ler_militares(filtro, valor):
     """Lê os militares que correspondem a um filtro específico."""
     conn, cursor = conectar()
-    query = f'''SELECT * FROM militares WHERE {filtro} = ?'''
-    cursor.execute(query, (valor,))
+    query = f'''SELECT * FROM militares WHERE {filtro} LIKE ?'''
+    cursor.execute(query, (f"%{valor}%",))  # Usa LIKE com os caracteres curinga %
     militares = cursor.fetchall()
     conn.close()
     return militares
+
 
 def todos_militares():
     """Retorna todos os militares cadastrados no banco de dados."""

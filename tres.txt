@@ -1,14 +1,14 @@
-'Nome'
-'RG'
-'CPF'
-'Banco'
-'CC'
-'Agencia'
-'PIS/PASEP'
-'DOC SEI'
-'Ação'
-str(value)
-f"Erro ao c
-"Selecione o modo de c
-"FINANÇAS C
-value=""
+DADOS DE TABELAS:
+
+Nº BM
+P/G
+Nome
+RG
+CPF
+Banco
+CC
+Agencia
+Inicio DSP
+Fim DSP
+Município
+DOC SEI
