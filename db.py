@@ -22,11 +22,12 @@ def criar_tabela():
             cc TEXT NOT NULL,
             agencia TEXT NOT NULL,
             type_vant TEXT NOT NULL CHECK (type_vant IN ('QQ', 'ADE')),
-            vantagem INTEGER NOT NULL CHECK (vantagem BETWEEN 0 AND 50)
+            vantagem TEXT NOT NULL
         )
     ''')
     conn.commit()
     conn.close()
+
 
 def criar_militar(numero, gradpost, nome, rg, cpf, banco, cc, agencia, type_vant, vantagem):
     """Insere um novo militar no banco de dados."""
@@ -84,6 +85,12 @@ def deletar_militar(militar_id):
     cursor.execute('''DELETE FROM militares WHERE id = ?''', (militar_id,))
     conn.commit()
     conn.close()
+def apagar_tabela():
+    """Apaga a tabela de militares."""
+    conn, cursor = conectar()
+    cursor.execute('''DROP TABLE IF EXISTS militares''')
+    conn.commit()
+    conn.close()
 
 def importar_militares_de_excel(caminho_excel):
     """Importa militares de um arquivo Excel para o banco de dados."""
@@ -122,3 +129,7 @@ def importar_militares_de_excel(caminho_excel):
 
 # Criar a tabela ao importar o módulo
 criar_tabela()
+
+if __name__ == "__main__":
+    # Testar as funções
+    apagar_tabela()

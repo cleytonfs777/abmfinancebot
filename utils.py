@@ -21,7 +21,18 @@ POST_GRAD = [
 
 ]
 
-
+VANTEGENS = [
+"7/ADT-ANTERIOR A 1ºSET07",
+"6/ADT-ANTERIOR A 1ºSET07",
+"7/ADT-POSTERIOR A 1ºSET07",
+"6/ADT-POSTERIOR A 1ºSET07",
+"6",
+"5",
+"4",
+"3",
+"2",
+"1",
+"0"]
 
 
 def create_login_dialog(page: ft.Page):

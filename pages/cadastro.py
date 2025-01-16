@@ -1,7 +1,7 @@
 import flet as ft
 from db import criar_militar, ler_militares
 from tabelas import campo_field, drop_field
-from utils import POST_GRAD
+from utils import POST_GRAD, VANTEGENS
 
 
 def cadastro_page(page: ft.Page):
@@ -16,7 +16,7 @@ def cadastro_page(page: ft.Page):
     cc_f = campo_field("Conta Corrente")
     ag_f = campo_field("Agência")
     type_van_f = drop_field(["QQ", "ADE"],"Tipo de Vantagem")               
-    vant_f = campo_field("Vantagem", 2, apenas_numeros=True)  # Apenas números permitidos
+    vant_f = drop_field(VANTEGENS,"Tipo de Vantagem") 
 
 
     # Função para validação de campos
@@ -40,11 +40,8 @@ def cadastro_page(page: ft.Page):
             erros.append("O campo 'Agência' é obrigatório.")
         if not type_van_f.value:
             erros.append("O campo 'Tipo de Vantagem' é obrigatório.")
-        try:
-            int(vant_f.value)
-        except ValueError:
-            erros.append(
-                "O campo 'Vantagem' deve ser um número válido.")
+        if not vant_f.value:
+            erros.append("O campo 'Vantagem' é obrigatório.")
         return erros
 
     # Botão de cadastro
@@ -117,8 +114,9 @@ def cadastro_page(page: ft.Page):
                     cc=cc_f.value,
                     agencia=ag_f.value,
                     type_vant=type_van_f.value,
-                    vantagem=int(vant_f.value)
+                    vantagem=vant_f.value
                 )
+                page.update()
                 popup_sucesso = ft.AlertDialog(
                     title=ft.Text("Cadastro realizado"),
                     content=ft.Text(f"O registro com o número {numero_f.value} foi cadastrado com sucesso."),

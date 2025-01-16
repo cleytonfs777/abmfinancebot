@@ -1,6 +1,51 @@
 import flet as ft
 from utils import create_login_dialog, MUNICIPIOS
 from db import ler_militares
+from datetime import datetime
+import pandas as pd
+
+# Criar a tabela de valores como um DataFrame
+TABELA_VALORES = pd.read_csv("tabela_valores.csv")
+
+def calcular_qtd_diarias(inicio, fim):
+    fmt = "%d/%m/%Y %H:%M"
+    try:
+        inicio_dt = datetime.strptime(inicio, fmt)
+        fim_dt = datetime.strptime(fim, fmt)
+        delta = fim_dt - inicio_dt
+        dias = delta.days
+        horas_restantes = delta.seconds / 3600
+        if horas_restantes >= 12:
+            return dias + 0.5
+        elif horas_restantes > 0:
+            return dias + 0.5 if dias == 0 else dias
+        return dias
+    except Exception:
+        return 0
+
+def calcular_valor(pg, vantagem, destino, qtd_diarias):
+    # Determinar a categoria do município
+    if destino in ["Belo Horizonte"] or destino in MUNICIPIOS:
+        categoria = "Capitais"
+    elif destino in ["Uberlândia", "Patos de Minas", "Poços de Caldas"]:
+        categoria = "Especiais"
+    else:
+        categoria = "Demais"
+
+    # Filtrar a tabela com base no P/G e Vantagem
+    linha = TABELA_VALORES[
+        (TABELA_VALORES["P/G"] == pg) & 
+        (TABELA_VALORES["Vantagem"] == vantagem)
+    ]
+
+    if linha.empty:
+        print(f"Erro: Não encontrado valor para P/G {pg}, Vantagem {vantagem}.")
+        return 0
+
+    # Obter o valor base e calcular o total
+    # substitui , por . e converte para float
+    valor_base = float(linha[categoria].str.replace(",", ".").values[0])
+    return valor_base * qtd_diarias
 
 def empenho_page(page: ft.Page, table_comum, file_picker):
     painel_process = ft.Container(
@@ -31,22 +76,22 @@ def empenho_page(page: ft.Page, table_comum, file_picker):
     def buscar_militares(e):
         nome = pesquisa_input.value.strip()
         if nome:
-            resultados = ler_militares("nome", nome)  # Busca parcial no campo 'nome'
+            resultados = ler_militares("nome", nome)
             tabela_dados.rows.clear()
             for militar in resultados:
                 tabela_dados.rows.append(
                     ft.DataRow(
                         cells=[
-                            ft.DataCell(ft.Text(militar[1], color="#000000")),  # Número
-                            ft.DataCell(ft.Text(militar[2], color="#000000")),  # Graduação/Posto
-                            ft.DataCell(ft.Text(militar[3], color="#000000")),  # Nome
-                            ft.DataCell(ft.Text(militar[4], color="#000000")),  # RG
-                            ft.DataCell(ft.Text(militar[5], color="#000000")),  # CPF
-                            ft.DataCell(ft.Text(militar[6], color="#000000")),  # Banco
-                            ft.DataCell(ft.Text(militar[7], color="#000000")),  # Conta Corrente
-                            ft.DataCell(ft.Text(militar[8], color="#000000")),  # Agência
-                            ft.DataCell(ft.Text(militar[9], color="#000000")),  # Tipo de Vantagem
-                            ft.DataCell(ft.Text(militar[10], color="#000000")),  # Vantagem
+                            ft.DataCell(ft.Text(militar[1], color="#000000")),
+                            ft.DataCell(ft.Text(militar[2], color="#000000")),
+                            ft.DataCell(ft.Text(militar[3], color="#000000")),
+                            ft.DataCell(ft.Text(militar[4], color="#000000")),
+                            ft.DataCell(ft.Text(militar[5], color="#000000")),
+                            ft.DataCell(ft.Text(militar[6], color="#000000")),
+                            ft.DataCell(ft.Text(militar[7], color="#000000")),
+                            ft.DataCell(ft.Text(militar[8], color="#000000")),
+                            ft.DataCell(ft.Text(militar[9], color="#000000")),
+                            ft.DataCell(ft.Text(militar[10], color="#000000")),
                             ft.DataCell(
                                 ft.IconButton(
                                     icon=ft.Icons.ADD,
@@ -62,41 +107,46 @@ def empenho_page(page: ft.Page, table_comum, file_picker):
             tabela_dados.update()
 
     def adicionar_na_tabela_final(militar):
-        # Verifica se o número já existe na tabela final
         for row in tabela_final.rows:
             if row.cells[0].content.value == militar[1]:
                 print("Número já existe na tabela final.")
                 return
 
-        # Cria uma nova linha
+        inicio = inicio_dsp.value
+        fim = fim_dsp.value
+        destino = municipio_destino.value
+
+        qtd_diarias = calcular_qtd_diarias(inicio, fim)
+        valor = calcular_valor(militar[2], militar[10], destino, qtd_diarias)
+
         def remover_row(e):
             tabela_final.rows.remove(new_row)
             tabela_final.update()
 
         new_row = ft.DataRow(
             cells=[
-                ft.DataCell(ft.Text(militar[1], color="#000000")),  # Número
-                ft.DataCell(ft.Text(militar[2], color="#000000")),  # Graduação/Posto
-                ft.DataCell(ft.Text(militar[3], color="#000000")),  # Nome
-                ft.DataCell(ft.Text(militar[4], color="#000000")),  # RG
-                ft.DataCell(ft.Text(militar[5], color="#000000")),  # CPF
-                ft.DataCell(ft.Text(militar[6], color="#000000")),  # Banco
-                ft.DataCell(ft.Text(militar[7], color="#000000")),  # Conta Corrente
-                ft.DataCell(ft.Text(militar[8], color="#000000")),  # Agência
-                ft.DataCell(ft.Text(militar[9], color="#000000")),  # Tipo de Vantagem
-                ft.DataCell(ft.Text(militar[10], color="#000000")),  # Vantagem
+                ft.DataCell(ft.Text(militar[1], color="#000000")),
+                ft.DataCell(ft.Text(militar[2], color="#000000")),
+                ft.DataCell(ft.Text(militar[3], color="#000000")),
+                ft.DataCell(ft.Text(militar[4], color="#000000")),
+                ft.DataCell(ft.Text(militar[5], color="#000000")),
+                ft.DataCell(ft.Text(militar[6], color="#000000")),
+                ft.DataCell(ft.Text(militar[7], color="#000000")),
+                ft.DataCell(ft.Text(militar[8], color="#000000")),
+                ft.DataCell(ft.Text(militar[9], color="#000000")),
+                ft.DataCell(ft.Text(militar[10], color="#000000")),
+                ft.DataCell(ft.Text(str(qtd_diarias), color="#000000")),
+                ft.DataCell(ft.Text(f"R$ {valor:.2f}", color="#000000")),
                 ft.DataCell(
                     ft.IconButton(
                         icon=ft.Icons.REMOVE,
-                        on_click=remover_row  # Passa a função para remover a linha
+                        on_click=remover_row
                     )
                 )
             ]
         )
         tabela_final.rows.append(new_row)
         tabela_final.update()
-
-
 
     def remover_da_tabela_final(row):
         tabela_final.rows.remove(row)
@@ -110,13 +160,13 @@ def empenho_page(page: ft.Page, table_comum, file_picker):
             weight="bold",
             color="#000000"
         ),
-        padding=ft.padding.only(bottom=10)  # Espaço inferior de 10px
+        padding=ft.padding.only(bottom=10)
     )
 
     inicio_dsp = ft.TextField(
         label="Início DSP (Data e Hora)",
         hint_text="DD/MM/AAAA HH:MM",
-        width=250,  # Define uma largura fixa
+        width=250,
         border_color="#000000",
         border_radius=6,
         text_style=ft.TextStyle(color="#000000")
@@ -125,7 +175,7 @@ def empenho_page(page: ft.Page, table_comum, file_picker):
     fim_dsp = ft.TextField(
         label="Fim DSP (Data e Hora)",
         hint_text="DD/MM/AAAA HH:MM",
-        width=250,  # Define uma largura fixa
+        width=250,
         border_color="#000000",
         border_radius=6,
         text_style=ft.TextStyle(color="#000000")
@@ -134,7 +184,7 @@ def empenho_page(page: ft.Page, table_comum, file_picker):
     municipio_origem = ft.Dropdown(
         label="Município de Origem",
         options=[ft.dropdown.Option(municipio) for municipio in MUNICIPIOS],
-        width=250,  # Define uma largura fixa
+        width=250,
         border_color="#000000",
         border_radius=6,
     )
@@ -142,7 +192,7 @@ def empenho_page(page: ft.Page, table_comum, file_picker):
     municipio_destino = ft.Dropdown(
         label="Município de Destino",
         options=[ft.dropdown.Option(municipio) for municipio in MUNICIPIOS],
-        width=250,  # Define uma largura fixa
+        width=250,
         border_color="#000000",
         border_radius=6,
     )
@@ -161,11 +211,9 @@ def empenho_page(page: ft.Page, table_comum, file_picker):
                 alignment=ft.MainAxisAlignment.SPACE_AROUND,
             )
         ],
-        spacing=20,  # Espaçamento entre as linhas
+        spacing=20,
         tight=True
     )
-
-
 
     # Segunda divisão
     segunda_divisao_titulo = ft.Container(
@@ -175,7 +223,7 @@ def empenho_page(page: ft.Page, table_comum, file_picker):
             weight="bold",
             color="#000000"
         ),
-        padding=ft.padding.only(top=20, bottom=10)  # Espaço superior e inferior
+        padding=ft.padding.only(top=20, bottom=10)
     )
     pesquisa_input = ft.TextField(
         label="Pesquisar Militar",
@@ -193,7 +241,7 @@ def empenho_page(page: ft.Page, table_comum, file_picker):
     tabela_dados = ft.DataTable(
         columns=[
             ft.DataColumn(ft.Text("Número", color="#000000")),
-            ft.DataColumn(ft.Text("Graduação/Posto", color="#000000")),
+            ft.DataColumn(ft.Text("P/G", color="#000000")),
             ft.DataColumn(ft.Text("Nome", color="#000000")),
             ft.DataColumn(ft.Text("RG", color="#000000")),
             ft.DataColumn(ft.Text("CPF", color="#000000")),
@@ -224,12 +272,12 @@ def empenho_page(page: ft.Page, table_comum, file_picker):
             weight="bold",
             color="#000000"
         ),
-        padding=ft.padding.only(top=20, bottom=10)  # Espaço superior e inferior
+        padding=ft.padding.only(top=20, bottom=10)
     )
     tabela_final = ft.DataTable(
         columns=[
             ft.DataColumn(ft.Text("Número", color="#000000")),
-            ft.DataColumn(ft.Text("Graduação/Posto", color="#000000")),
+            ft.DataColumn(ft.Text("P/G", color="#000000")),
             ft.DataColumn(ft.Text("Nome", color="#000000")),
             ft.DataColumn(ft.Text("RG", color="#000000")),
             ft.DataColumn(ft.Text("CPF", color="#000000")),
@@ -238,6 +286,8 @@ def empenho_page(page: ft.Page, table_comum, file_picker):
             ft.DataColumn(ft.Text("Agência", color="#000000")),
             ft.DataColumn(ft.Text("Tipo de Vantagem", color="#000000")),
             ft.DataColumn(ft.Text("Vantagem", color="#000000")),
+            ft.DataColumn(ft.Text("Qtd Diárias", color="#000000")),
+            ft.DataColumn(ft.Text("Valor", color="#000000")),
             ft.DataColumn(ft.Text("Ação", color="#000000"))
         ],
         rows=[]
